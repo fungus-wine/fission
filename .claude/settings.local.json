@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "WebFetch(domain:wiki.makera.com)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:cdn-reichelt.de)",
+      "WebFetch(domain:manuals.plus)",
+      "WebFetch(domain:www.deskproto.com)",
+      "Bash(ruby --version)",
+      "Bash(gem --version)",
+      "Bash(bundle gem:*)",
+      "Bash(bundle install:*)",
+      "Bash(bundle exec:*)"
+    ]
+  }
+}
