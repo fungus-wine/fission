@@ -5,7 +5,7 @@ module Fission
     USAGE = <<~TEXT
       Usage:
         fission combine [options] FILE1 FILE2 [FILE3 ...]
-        fission rotate  [options] FILE1 ANGLE1 FILE2 [ANGLE2 FILE3 ...]
+        fission rotate  [options] FILE1 [FILE2 ...] ANGLE1 FILE3 [FILE4 ...] [ANGLE2 FILE5 ...]
 
       Commands:
         combine    Combine multiple CNC files with tool changes
@@ -19,6 +19,7 @@ module Fission
       Examples:
         fission combine -o merged.nc roughing.nc finishing.nc
         fission rotate -o part.nc front.nc 90 right.nc 180 back.nc
+        fission rotate -o part.nc rough.nc finish.nc 90 side_rough.nc side_finish.nc
     TEXT
 
     def initialize(argv)
@@ -77,8 +78,8 @@ module Fission
         return 1
       end
 
-      files = @argv.map { |path| GcodeFile.new(path) }
-      result = Combiner.new(files, mode: :tool_change).combine
+      steps = @argv.map { |path| GcodeFile.new(path) }
+      result = Combiner.new(steps).combine
       write_output(result, output_file)
       0
     end
@@ -90,34 +91,30 @@ module Fission
         return 1
       end
 
-      files, rotations = parse_rotate_args(@argv)
-      result = Combiner.new(files, mode: :fourth_axis, rotations: rotations).combine
+      steps = parse_rotate_args(@argv)
+      result = Combiner.new(steps).combine
       write_output(result, output_file)
       0
     end
 
-    # Parses alternating file/angle arguments: FILE1 ANGLE1 FILE2 [ANGLE2 FILE3 ...]
+    # Parses a free-form mix of files and angles.
+    # Numbers are treated as angles, everything else as a file path.
     def parse_rotate_args(args)
-      files = []
-      rotations = []
-
-      args.each_with_index do |arg, i|
-        if i.even?
-          files << GcodeFile.new(arg)
+      steps = args.map do |arg|
+        if arg.match?(/\A-?\d+(\.\d+)?\z/)
+          Float(arg)
         else
-          rotations << Float(arg)
+          GcodeFile.new(arg)
         end
       end
 
-      if files.length < 2
-        raise Error, "rotate requires at least two files"
-      end
+      files = steps.select { |s| s.is_a?(GcodeFile) }
+      raise Error, "rotate requires at least two files" if files.length < 2
 
-      if rotations.length != files.length - 1
-        raise Error, "Expected #{files.length - 1} angle(s) between #{files.length} files"
-      end
+      angles = steps.select { |s| s.is_a?(Numeric) }
+      raise Error, "rotate requires at least one angle" if angles.empty?
 
-      [files, rotations]
+      steps
     end
 
     def write_output(content, output_file)

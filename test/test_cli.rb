@@ -88,6 +88,23 @@ class TestCLI < Minitest::Test
     assert_includes out, "G0 A90"
   end
 
+  def test_rotate_multiple_files_between_angles
+    out, = capture_io do
+      @status = Fission::CLI.new([
+        "rotate",
+        fixture_path("roughing.nc"),
+        fixture_path("finishing.nc"),
+        "90",
+        fixture_path("third_op.nc")
+      ]).run
+    end
+    assert_equal 0, @status
+    assert_includes out, "T1 M6"
+    assert_includes out, "T2 M6"
+    assert_includes out, "G0 A90"
+    assert_includes out, "T3 M6"
+  end
+
   def test_rotate_multiple_angles
     out, = capture_io do
       @status = Fission::CLI.new([

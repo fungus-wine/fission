@@ -11,100 +11,88 @@ class TestCombiner < Minitest::Test
     @third = Fission::GcodeFile.new(fixture_path("third_op.nc"))
   end
 
-  # --- tool_change mode ---
+  # --- tool_change (files only, no rotations) ---
 
-  def test_combine_tool_change_includes_both_bodies
-    result = Fission::Combiner.new([@roughing, @finishing], mode: :tool_change).combine
+  def test_combine_includes_both_bodies
+    result = Fission::Combiner.new([@roughing, @finishing]).combine
     assert_includes result, "T1 M6"
     assert_includes result, "T2 M6"
   end
 
-  def test_combine_tool_change_uses_first_header
-    result = Fission::Combiner.new([@roughing, @finishing], mode: :tool_change).combine
-    # Header from roughing (first file) should appear
+  def test_combine_uses_first_header
+    result = Fission::Combiner.new([@roughing, @finishing]).combine
     assert_includes result, "(roughing)"
   end
 
-  def test_combine_tool_change_has_single_m30
-    result = Fission::Combiner.new([@roughing, @finishing], mode: :tool_change).combine
+  def test_combine_has_single_m30
+    result = Fission::Combiner.new([@roughing, @finishing]).combine
     assert_equal 1, result.scan(/^M30$/i).length
   end
 
-  def test_combine_tool_change_three_files
-    result = Fission::Combiner.new([@roughing, @finishing, @third], mode: :tool_change).combine
+  def test_combine_three_files
+    result = Fission::Combiner.new([@roughing, @finishing, @third]).combine
     assert_includes result, "T1 M6"
     assert_includes result, "T2 M6"
     assert_includes result, "T3 M6"
     assert_equal 1, result.scan(/^M30$/i).length
   end
 
-  def test_combine_tool_change_includes_file_comments
-    result = Fission::Combiner.new([@roughing, @finishing], mode: :tool_change).combine
+  def test_combine_includes_file_comments
+    result = Fission::Combiner.new([@roughing, @finishing]).combine
     assert_includes result, "(--- Begin: roughing.nc ---)"
     assert_includes result, "(--- End: roughing.nc ---)"
     assert_includes result, "(--- Begin: finishing.nc ---)"
   end
 
-  # --- fourth_axis mode ---
+  # --- fourth_axis (files with rotation angles) ---
 
-  def test_combine_fourth_axis_inserts_rotation
-    result = Fission::Combiner.new(
-      [@roughing, @finishing],
-      mode: :fourth_axis,
-      rotations: [90]
-    ).combine
-
+  def test_rotation_between_files
+    result = Fission::Combiner.new([@roughing, 90, @finishing]).combine
     assert_includes result, "G0 A90"
     assert_includes result, "Rotate A-axis to 90 degrees"
   end
 
-  def test_combine_fourth_axis_multiple_rotations
-    result = Fission::Combiner.new(
-      [@roughing, @finishing, @third],
-      mode: :fourth_axis,
-      rotations: [90, 180]
-    ).combine
-
+  def test_multiple_rotations
+    result = Fission::Combiner.new([@roughing, 90, @finishing, 180, @third]).combine
     assert_includes result, "G0 A90"
     assert_includes result, "G0 A180"
   end
 
-  def test_combine_fourth_axis_stops_spindle_before_rotation
-    result = Fission::Combiner.new(
-      [@roughing, @finishing],
-      mode: :fourth_axis,
-      rotations: [90]
-    ).combine
+  def test_multiple_files_before_rotation
+    result = Fission::Combiner.new([@roughing, @finishing, 90, @third]).combine
+    assert_includes result, "T1 M6"
+    assert_includes result, "T2 M6"
+    assert_includes result, "G0 A90"
+    assert_includes result, "T3 M6"
+  end
 
+  def test_multiple_files_after_rotation
+    result = Fission::Combiner.new([@roughing, 90, @finishing, @third]).combine
+    assert_includes result, "T1 M6"
+    assert_includes result, "G0 A90"
+    assert_includes result, "T2 M6"
+    assert_includes result, "T3 M6"
+  end
+
+  def test_spindle_stop_before_rotation
+    result = Fission::Combiner.new([@roughing, 90, @finishing]).combine
     lines = result.lines.map(&:strip)
     rotation_idx = lines.index { |l| l.include?("G0 A90") }
-    # Find the M5 that appears before the rotation command
     m5_indices = lines.each_index.select { |i| lines[i] == "M5" }
     spindle_stop_idx = m5_indices.select { |i| i < rotation_idx }.last
 
-    # M5 should appear before the A-axis rotation
     assert spindle_stop_idx, "Expected M5 before rotation"
     assert spindle_stop_idx < rotation_idx
   end
 
-  def test_combine_fourth_axis_retracts_z_before_rotation
-    result = Fission::Combiner.new(
-      [@roughing, @finishing],
-      mode: :fourth_axis,
-      rotations: [45.5]
-    ).combine
-
+  def test_z_retract_before_rotation
+    result = Fission::Combiner.new([@roughing, 45.5, @finishing]).combine
     assert_includes result, "G0 Z10"
     assert_includes result, "G0 A45.500"
   end
 
-  def test_combine_fourth_axis_decimal_formatting
-    result = Fission::Combiner.new(
-      [@roughing, @finishing],
-      mode: :fourth_axis,
-      rotations: [90]
-    ).combine
-    # Integer angles should not have decimal places
+  def test_integer_angle_formatting
+    result = Fission::Combiner.new([@roughing, 90, @finishing]).combine
     assert_includes result, "G0 A90"
     refute_includes result, "G0 A90.000"
   end
@@ -118,14 +106,17 @@ class TestCombiner < Minitest::Test
     assert_includes error.message, "At least two files"
   end
 
-  def test_fourth_axis_requires_correct_rotation_count
+  def test_must_start_with_file
     error = assert_raises(Fission::Error) do
-      Fission::Combiner.new(
-        [@roughing, @finishing, @third],
-        mode: :fourth_axis,
-        rotations: [90]
-      )
+      Fission::Combiner.new([90, @roughing, @finishing])
     end
-    assert_includes error.message, "Expected 2 rotation(s)"
+    assert_includes error.message, "start with a file"
+  end
+
+  def test_must_end_with_file
+    error = assert_raises(Fission::Error) do
+      Fission::Combiner.new([@roughing, @finishing, 90])
+    end
+    assert_includes error.message, "end with a file"
   end
 end
