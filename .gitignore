@@ -1,8 +1,25 @@
 /.bundle/
-/.yardoc
+/.yardoc/
 /_yardoc/
 /coverage/
 /doc/
 /pkg/
 /spec/reports/
 /tmp/
+
+# Gem build artifacts
+*.gem
+
+# macOS
+.DS_Store
+
+# Editor/IDE
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+
+# Bundler
+/vendor/bundle/
+Gemfile.lock
