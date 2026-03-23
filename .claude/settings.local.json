@@ -11,7 +11,8 @@
       "Bash(gem --version)",
       "Bash(bundle gem:*)",
       "Bash(bundle install:*)",
-      "Bash(bundle exec:*)"
+      "Bash(bundle exec:*)",
+      "WebFetch(domain:smoothieware.org)"
     ]
   }
 }

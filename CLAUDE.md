@@ -24,9 +24,9 @@ The gem has three core classes under `lib/fission/`:
 
 - **GcodeFile** (`gcode_file.rb`) — Parses a Fusion 360 G-code file into `header`, `body`, and `footer` arrays. Header/footer detection uses regex patterns matching G-code conventions (G17, G21, G90, M30, etc.). The boundary between header and body is the first tool call or spindle command (T/M lines).
 
-- **Combiner** (`combiner.rb`) — Takes an array of GcodeFile objects and produces a single combined G-code string. Uses the first file's header and last file's footer. In `:fourth_axis` mode, inserts M5 (spindle stop), Z retract, and `G0 A<angle>` between each file's body.
+- **Combiner** (`combiner.rb`) — Takes an ordered array of steps (GcodeFile objects and/or numeric angles) and produces a single combined G-code string. Uses the first file's header and last file's footer. Numeric steps insert M5 (spindle stop), Z retract, and `G0 A<angle>`.
 
-- **CLI** (`cli.rb`) — Parses argv into commands. `combine FILE1 FILE2 ...` for tool changes. `rotate FILE1 ANGLE1 FILE2 ...` for 4th axis (alternating file/angle args). Output goes to stdout by default or to a file with `-o`.
+- **CLI** (`cli.rb`) — Parses argv into commands. `combine FILE1 FILE2 ...` for tool changes. `rotate FILE1 [FILE2 ...] ANGLE FILE3 ...` for 4th axis — numbers are angles, everything else is a file. Multiple files can appear between angles. Output goes to stdout by default or to a file with `-o`.
 
 ## Carvera G-code Notes
 
