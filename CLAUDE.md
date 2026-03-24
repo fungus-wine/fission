@@ -6,9 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Fission is a Ruby gem CLI tool that combines separate Fusion 360 CNC (G-code) files into a single program for the Makera Carvera CNC machine. It exists because the free version of Fusion 360 doesn't support tool changers or 4th axis machining.
 
-Two modes:
-- **combine** (tool change): Concatenates G-code files, stripping duplicate headers/footers into a unified program
-- **rotate** (4th axis): Like combine, but inserts A-axis rotation commands (`G0 A<angle>`) between setups, with spindle stop and Z retract for safety
+The `combine` command concatenates G-code files, stripping duplicate headers/footers into a unified program. Numeric arguments are treated as A-axis rotation angles, inserting rotation commands (`G0 A<angle>`) between setups with spindle stop and Z retract for safety.
 
 ## Commands
 
@@ -26,7 +24,7 @@ The gem has three core classes under `lib/fission/`:
 
 - **Combiner** (`combiner.rb`) — Takes an ordered array of steps (GcodeFile objects and/or numeric angles) and produces a single combined G-code string. Uses the first file's header and last file's footer. Numeric steps insert M5 (spindle stop), Z retract, and `G0 A<angle>`.
 
-- **CLI** (`cli.rb`) — Parses argv into commands. `combine FILE1 FILE2 ...` for tool changes. `rotate FILE1 [FILE2 ...] ANGLE FILE3 ...` for 4th axis — numbers are angles, everything else is a file. Multiple files can appear between angles. Output goes to stdout by default or to a file with `-o`.
+- **CLI** (`cli.rb`) — Parses argv into commands. `combine FILE1 [ANGLE1] FILE2 ...` — numbers are angles (A-axis rotations), everything else is a file. Multiple files can appear between angles. Output goes to stdout by default or to a file with `-o`.
 
 ## Carvera G-code Notes
 

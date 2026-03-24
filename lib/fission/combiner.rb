@@ -18,7 +18,6 @@ module Fission
 
     def combine
       lines = []
-      files = @steps.select { |s| s.is_a?(GcodeFile) }
 
       # Use header from the first file
       lines.concat(files.first.header)
@@ -34,7 +33,8 @@ module Fission
           lines << ""
           lines << "(--- Rotate A-axis to #{angle} degrees ---)"
           lines << "M5"
-          lines << "G0 Z10"
+          lines << "G28 G91 Z0"
+          lines << "G90"
           lines << "G0 A#{format_angle(angle)}"
           lines << ""
         end
@@ -43,16 +43,38 @@ module Fission
       # Use footer from the last file
       lines.concat(files.last.footer)
 
+      @combined_lines = lines
       lines.join("\n") + "\n"
+    end
+
+    def validate_combined
+      raise Error, "Must call #combine before #validate_combined" unless @combined_lines
+
+      Validator.new(@combined_lines)
+    end
+
+    def validate_inputs
+      errors = []
+      warnings = []
+      files.each do |file|
+        file.validation_errors.each do |e|
+          errors << { file: file.filename, result: e }
+        end
+        file.validation_warnings.each do |w|
+          warnings << { file: file.filename, result: w }
+        end
+      end
+      { errors: errors, warnings: warnings }
     end
 
     private
 
-    def validate!
-      files = @steps.select { |s| s.is_a?(GcodeFile) }
-      raise Error, "At least two files are required" if files.length < 2
+    def files
+      @files ||= @steps.select { |s| s.is_a?(GcodeFile) }
+    end
 
-      # Must start and end with a file, not a rotation
+    def validate!
+      raise Error, "At least two files are required" if files.length < 2
       raise Error, "Steps must start with a file, not an angle" unless @steps.first.is_a?(GcodeFile)
       raise Error, "Steps must end with a file, not an angle" unless @steps.last.is_a?(GcodeFile)
     end

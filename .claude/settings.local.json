@@ -12,7 +12,8 @@
       "Bash(bundle gem:*)",
       "Bash(bundle install:*)",
       "Bash(bundle exec:*)",
-      "WebFetch(domain:smoothieware.org)"
+      "WebFetch(domain:smoothieware.org)",
+      "Bash(ls:*)"
     ]
   }
 }

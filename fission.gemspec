@@ -11,7 +11,7 @@ Gem::Specification.new do |spec|
   spec.summary = "Combine Fusion 360 CNC files for the Makera Carvera"
   spec.description = "Stitches together separate Fusion 360 CNC files into a single program " \
                      "for the Makera Carvera, supporting tool changes and 4th axis rotations."
-  spec.homepage = "https://github.com/damoncali/fission"
+  spec.homepage = "https://github.com/fungus-wine/fission"
   spec.required_ruby_version = ">= 3.1.0"
 
   spec.metadata["homepage_uri"] = spec.homepage

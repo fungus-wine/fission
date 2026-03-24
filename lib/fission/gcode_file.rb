@@ -8,7 +8,8 @@ module Fission
   # - Body: the actual cutting operations
   # - Footer: spindle stop, retract, program end (M30/M2/%)
   class GcodeFile
-    attr_reader :path, :lines, :header, :body, :footer
+    attr_reader :path, :lines, :header, :body, :footer,
+                :validation_errors, :validation_warnings
 
     # Lines that mark the end of the cutting program
     FOOTER_PATTERNS = [
@@ -20,25 +21,29 @@ module Fission
     # Lines that are part of the startup sequence (before cutting begins)
     HEADER_PATTERNS = [
       /\A[%()]/,         # program delimiter or comments
-      /\AG[0-9]+ /i,     # G-code setup commands on their own
       /\AG17\b/i,        # XY plane selection
       /\AG21\b/i,        # metric units
       /\AG20\b/i,        # imperial units
       /\AG90\b/i,        # absolute positioning
       /\AG91\b/i,        # incremental positioning
       /\AG28\b/i,        # return to home
-      /\AG54\b/i,        # work coordinate system
       /\AG92\b/i,        # coordinate system offset
+      /\AG94\b/i,        # feed per minute mode
     ].freeze
 
     def initialize(path)
       @path = path
       @lines = File.readlines(path, chomp: true)
       parse
+      run_validation
     end
 
     def filename
       File.basename(@path)
+    end
+
+    def valid?
+      @validation_errors.empty?
     end
 
     private
@@ -92,6 +97,12 @@ module Fission
           @body << line
         end
       end
+    end
+
+    def run_validation
+      validator = Validator.new(@lines)
+      @validation_errors = validator.errors
+      @validation_warnings = validator.warnings
     end
 
     def footer_line?(line)

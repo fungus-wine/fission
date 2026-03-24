@@ -87,7 +87,7 @@ class TestCombiner < Minitest::Test
 
   def test_z_retract_before_rotation
     result = Fission::Combiner.new([@roughing, 45.5, @finishing]).combine
-    assert_includes result, "G0 Z10"
+    assert_includes result, "G28 G91 Z0"
     assert_includes result, "G0 A45.500"
   end
 

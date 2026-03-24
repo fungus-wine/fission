@@ -10,7 +10,6 @@ class TestCLI < Minitest::Test
     assert_equal 0, @status
     assert_includes out, "Usage:"
     assert_includes out, "combine"
-    assert_includes out, "rotate"
   end
 
   def test_version_flag
@@ -75,10 +74,10 @@ class TestCLI < Minitest::Test
     assert_includes err, "at least two files"
   end
 
-  def test_rotate_to_stdout
+  def test_combine_with_rotation
     out, = capture_io do
       @status = Fission::CLI.new([
-        "rotate",
+        "combine",
         fixture_path("roughing.nc"),
         "90",
         fixture_path("finishing.nc")
@@ -88,10 +87,10 @@ class TestCLI < Minitest::Test
     assert_includes out, "G0 A90"
   end
 
-  def test_rotate_multiple_files_between_angles
+  def test_combine_multiple_files_between_angles
     out, = capture_io do
       @status = Fission::CLI.new([
-        "rotate",
+        "combine",
         fixture_path("roughing.nc"),
         fixture_path("finishing.nc"),
         "90",
@@ -105,10 +104,10 @@ class TestCLI < Minitest::Test
     assert_includes out, "T3 M6"
   end
 
-  def test_rotate_multiple_angles
+  def test_combine_multiple_angles
     out, = capture_io do
       @status = Fission::CLI.new([
-        "rotate",
+        "combine",
         fixture_path("roughing.nc"),
         "90",
         fixture_path("finishing.nc"),
@@ -121,17 +120,6 @@ class TestCLI < Minitest::Test
     assert_includes out, "G0 A180"
   end
 
-  def test_rotate_requires_minimum_args
-    _, err = capture_io do
-      @status = Fission::CLI.new([
-        "rotate",
-        fixture_path("roughing.nc")
-      ]).run
-    end
-    assert_equal 1, @status
-    assert_includes err, "at least two files"
-  end
-
   def test_missing_file
     _, err = capture_io do
       @status = Fission::CLI.new([
@@ -142,5 +130,82 @@ class TestCLI < Minitest::Test
     end
     assert_equal 1, @status
     assert_includes err, "Error:"
+  end
+
+  # --- validate command ---
+
+  def test_validate_clean_file
+    capture_io do
+      @status = Fission::CLI.new([
+        "validate",
+        fixture_path("roughing.nc")
+      ]).run
+    end
+    assert_equal 0, @status
+  end
+
+  def test_validate_multiple_files
+    capture_io do
+      @status = Fission::CLI.new([
+        "validate",
+        fixture_path("roughing.nc"),
+        fixture_path("finishing.nc")
+      ]).run
+    end
+    assert_equal 0, @status
+  end
+
+  def test_validate_no_args
+    _, err = capture_io do
+      @status = Fission::CLI.new(["validate"]).run
+    end
+    assert_equal 1, @status
+    assert_includes err, "at least one file"
+  end
+
+  def test_validate_reports_errors
+    Dir.mktmpdir do |dir|
+      bad_file = File.join(dir, "bad.nc")
+      File.write(bad_file, "G99 X10\n")
+      _, err = capture_io do
+        @status = Fission::CLI.new(["validate", bad_file]).run
+      end
+      assert_equal 1, @status
+      assert_includes err, "Unsupported G-code"
+    end
+  end
+
+  # --- --output long form ---
+
+  def test_combine_with_long_output_option
+    Dir.mktmpdir do |dir|
+      output = File.join(dir, "out.nc")
+      capture_io do
+        @status = Fission::CLI.new([
+          "combine",
+          "--output", output,
+          fixture_path("roughing.nc"),
+          fixture_path("finishing.nc")
+        ]).run
+      end
+      assert_equal 0, @status
+      assert File.exist?(output)
+      assert_includes File.read(output), "T1 M6"
+    end
+  end
+
+  # --- unknown flags ---
+
+  def test_unknown_flag_is_error
+    _, err = capture_io do
+      @status = Fission::CLI.new([
+        "combine",
+        fixture_path("roughing.nc"),
+        "-f",
+        fixture_path("finishing.nc")
+      ]).run
+    end
+    assert_equal 1, @status
+    assert_includes err, "Unknown option"
   end
 end

@@ -8,6 +8,6 @@ require "tmpdir"
 
 module FixtureHelper
   def fixture_path(name)
-    File.join(File.dirname(__FILE__), "fixtures", name)
+    File.join(__dir__, "fixtures", name)
   end
 end
