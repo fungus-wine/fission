@@ -1,11 +1,11 @@
-## WARNING: Alpha Software
-This code is a hobby project, WIP, and should be considered alpha software at best. It may not even work and hasn't been tested. Like any NC code, its output should be verified with a simulator and/or on your machine before trusting the code.
+## WARNING: Beta Software
+This code is a hobby project, a work in progress, and should be considered beta software. It has only been lightly tested. Like any CNC code, its output should be verified with a simulator and/or on your machine before trusting the code.
 
 # Fission
 
 Fission combines separate [Fusion 360](https://www.autodesk.com/products/fusion-360) CNC files into a single G-code program for the [Makera Carvera](https://www.makera.com/).
 
-The free version of Fusion 360 doesn't support tool changers or 4th axis machining. Fission works around these limitations by stitching together multiple setups into one program that's ready to send to your Carvera.
+The free version of Fusion 360 doesn't support tool changers or 4th axis machining. Fission works around these limitations by stitching together multiple operations into one program that's ready to send to your Carvera.
 
 ## What It Does
 
