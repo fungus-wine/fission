@@ -5,8 +5,7 @@ require_relative "lib/fission/version"
 Gem::Specification.new do |spec|
   spec.name = "fission"
   spec.version = Fission::VERSION
-  spec.authors = ["Damon"]
-  spec.email = ["damoncali@gmail.com"]
+  spec.authors = ["fungus-wine"]
 
   spec.summary = "Combine Fusion 360 CNC files for the Makera Carvera"
   spec.description = "Stitches together separate Fusion 360 CNC files into a single program " \

@@ -15,7 +15,7 @@ module Fission
       G43 G43.1 G49
       G53
       G54 G55 G56 G57 G58 G59
-      G80
+      G73 G80 G81 G82 G83
       G90 G91 G91.1
       G92 G92.1
       G93 G94
@@ -23,9 +23,10 @@ module Fission
 
     SUPPORTED_M_CODES = %w[
       M0 M1 M2 M3 M4 M5 M6 M7 M8 M9
-      M17 M18
+      M10 M11
       M30
-      M112
+      M37 M40
+      M48 M49
     ].freeze
 
     AXIS_WORDS = %w[X Y Z A].freeze
@@ -41,6 +42,7 @@ module Fission
       @tool_loaded = nil
       @feed_rate_set = false
       @air_on = false
+      @air_warning_given = false
       @speed_set = false
       validate
     end
@@ -60,8 +62,15 @@ module Fission
         line = strip_comments(raw_line).strip
 
         next if line.empty?
+        next if line == "%"
 
         words = parse_words(line)
+
+        if words.empty?
+          add_error(line_number, raw_line, "Unrecognized content: #{line}")
+          next
+        end
+
         g_codes = extract_codes(words, "G")
         m_codes = extract_codes(words, "M")
         has_axis = words.any? { |w| AXIS_WORDS.include?(w[0]) }
@@ -213,8 +222,9 @@ module Fission
     end
 
     def check_air_during_cutting(g_codes, line_number, raw_line)
-      if cutting_codes?(g_codes) && !@air_on
+      if cutting_codes?(g_codes) && !@air_on && !@air_warning_given
         add_warning(line_number, raw_line, "Cutting move without air blast on")
+        @air_warning_given = true
       end
     end
 
@@ -250,6 +260,7 @@ module Fission
       @pending_tool = nil
       @feed_rate_set = false
       @air_on = false
+      @air_warning_given = false
       @speed_set = false
     end
 

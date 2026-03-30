@@ -369,6 +369,19 @@ class TestValidator < Minitest::Test
     assert_empty errors
   end
 
+  # --- Unrecognized content ---
+
+  def test_gibberish_text_is_error
+    v = validate(["hello world"])
+    assert_equal 1, v.errors.size
+    assert_match(/Unrecognized content/, v.errors.first.message)
+  end
+
+  def test_percent_delimiter_is_valid
+    v = validate(["%"])
+    assert v.valid?
+  end
+
   # --- Comments ---
 
   def test_comments_are_ignored

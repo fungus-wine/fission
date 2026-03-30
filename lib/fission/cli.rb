@@ -6,10 +6,12 @@ module Fission
       Usage:
         fission combine  [options] FILE1 [ANGLE1] FILE2 [ANGLE2 FILE3 ...]
         fission validate FILE [FILE ...]
+        fission codes
 
       Commands:
         combine    Combine multiple CNC files, with optional A-axis rotations between setups
         validate   Validate G-code files for Carvera compatibility
+        codes      List all supported Carvera G-codes and M-codes
 
       Options:
         -o, --output FILE    Output file (default: stdout)
@@ -46,6 +48,9 @@ module Fission
         run_combine(output_file)
       when "validate"
         run_validate
+      when "codes"
+        Codes.print
+        0
       else
         $stderr.puts "Unknown command: #{command}"
         $stderr.puts USAGE
